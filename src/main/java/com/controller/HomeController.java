@@ -4,7 +4,11 @@ import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.sikuli.script.Pattern;
+import org.sikuli.script.Screen;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,7 +52,12 @@ public class HomeController {
 
                 wait.until(CustomExpectedConditions.pageLoadComplete());
 
-                // doi cho video run complete
+                WebElement e = wait.until(ExpectedConditions.presenceOfElementLocated(By.className("ytp-play-button")));
+                System.out.println(e.getAttribute("aria-label"));
+                if (e.getAttribute("aria-label").contains("Play") || e.getAttribute("aria-label").contains("Ph")
+                        || e.getAttribute("aria-label").contains("Lire")) {
+                    e.click();
+                }
 
                 String[] timeSplit = duration.split(":");
                 if (timeSplit.length == 2) {
