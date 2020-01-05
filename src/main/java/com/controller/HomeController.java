@@ -1,7 +1,6 @@
 package com.controller;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,7 +17,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.selenium.PlayVideo;
 
@@ -33,10 +34,10 @@ public class HomeController {
 
     @ResponseBody
     @RequestMapping(value = "/view_video", method = RequestMethod.POST)
-    public String viewVideo(HttpServletRequest request) {
+    public String viewVideo(HttpServletRequest request, @RequestParam("file") MultipartFile file) {
         String link = request.getParameter("link");
         String duration = request.getParameter("duration");
-        System.out.println(link);
+        System.out.println(file.getOriginalFilename());
 
         try {
             sendPOST("http://localhost:8080//view_video_vps", link, duration);
@@ -46,7 +47,7 @@ public class HomeController {
 
         return "success";
     }
-    
+
     @ResponseBody
     @RequestMapping(value = "/view_video_vps", method = RequestMethod.POST)
     public String viewVideoVps(HttpServletRequest request) {
@@ -55,8 +56,8 @@ public class HomeController {
         playVideo(link, duration);
         return "success";
     }
-    
-    private String sendPOST(String url, String link, String duration) throws IOException  {
+
+    private String sendPOST(String url, String link, String duration) throws IOException {
         String result = "";
         HttpPost post = new HttpPost(url);
         // add request parameters or form parameters
@@ -67,17 +68,16 @@ public class HomeController {
         post.setEntity(new UrlEncodedFormEntity(urlParameters));
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
-             CloseableHttpResponse response = httpClient.execute(post)){
+                CloseableHttpResponse response = httpClient.execute(post)) {
             result = EntityUtils.toString(response.getEntity());
         }
 
         return result;
     }
-    
+
     public void playVideo(String link, String duration) {
         Thread playVideo = new PlayVideo(link, duration);
         playVideo.start();
     }
-    
 
 }
