@@ -1,10 +1,11 @@
 package com.controller;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.common.Const;
 import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -43,14 +44,18 @@ public class HomeController {
         String duration = request.getParameter("duration");
         System.out.println(file.getOriginalFilename());
         String fileName = file.getOriginalFilename();
+        List<String> data = null;
         if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
-            readFileExcel(file);
+            data = readFileExcel(file);
         } else if (fileName.endsWith(".txt")) {
             // TODO:
         }
 
         try {
-            sendPOST("http://localhost:8080//view_video_vps", link, duration);
+            for (int i = 0; i < data.size(); i++) {
+                System.out.println("OK. GO!!!!!!!! Run in VPS : "+data.get(i));
+                sendPOST("http://" + data.get(i) + ":8000//view_video_vps", link, duration);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -93,40 +98,31 @@ public class HomeController {
     public List<String> readFileExcel(MultipartFile file) {
         List<String> listVPS = new ArrayList<>();
         try {
-//            String pathDir = System.getProperty("user.dir");
-//            FileInputStream file = new FileInputStream(new File(pathDir + "/" + "data.xlsx"));
             byte b[] = file.getBytes();
             InputStream ips = new ByteArrayInputStream(b);
             Workbook workbook = WorkbookFactory.create(ips);
-            //Create Workbook instance holding reference to .xlsx file
-            //Get first/desired sheet from the workbook
             Sheet sheet = workbook.getSheetAt(0);
             //Iterate through each rows one by one
             Iterator<Row> rowIterator = sheet.iterator();
             while (rowIterator.hasNext() && sheet.getRowSumsRight()) {
                 Row row = rowIterator.next();
                 //For each row, iterate through all the columns
-                Iterator<Cell> cellIP = row.cellIterator();
-
-                while (cellIP.hasNext()) {
-                    // next 1 element
-                    cellIP.next();
-                    Cell cell = cellIP.next();
-                    //Check the cell type and format accordingly
-                    switch (cell.getCellType()) {
-                        case Cell.CELL_TYPE_NUMERIC:
-                            System.out.print(cell.getNumericCellValue());
-                            break;
-                        case Cell.CELL_TYPE_STRING:
-                            System.out.print(cell.getStringCellValue());
-                            break;
+                Cell cell = row.getCell(1);
+                Pattern pattern = Pattern.compile(Const.IPV4_PATTERN);
+                if (Objects.nonNull(cell.getStringCellValue()) && !"".equals(cell.getStringCellValue())) {
+                    Matcher matcher = pattern.matcher(cell.getStringCellValue());
+                    if (matcher.matches()) {
+                        listVPS.add(cell.getStringCellValue());
                     }
+                } else {
+                    break;
                 }
-                System.out.println("");
             }
+            ips.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
+        System.out.println("List IP: " + listVPS.size());
         return listVPS;
     }
 }

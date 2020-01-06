@@ -27,24 +27,23 @@ public class PlayVideo extends Thread {
 
         String[] arr = link.split("=");
         if (arr.length == 2) {
-            browser.goToUrl("https://www.google.com/");
+            browser.goToUrl("https://www.youtube.com/");
             try {
                 wait.until(CustomExpectedConditions.pageLoadComplete());
-                driver.findElement(By.name("q")).sendKeys(arr[1]);
-                driver.findElement(By.name("q")).sendKeys(Keys.ENTER);
-
+                driver.findElement(By.name("search_query")).sendKeys(arr[1]);
+                driver.findElement(By.id("search-icon-legacy")).click();
                 wait.until(CustomExpectedConditions.pageLoadComplete());
-                driver.findElement(By.cssSelector(String.format("a[href=\"%s\"]", link))).click();
-
+//                driver.findElement(By.cssSelector(String.format("a[href=\"%s\"]", link))).click();
+                driver.findElement(By.cssSelector(String.format("a[href=\"/watch?v=%s\"]", arr[1]))).click();
                 wait.until(CustomExpectedConditions.pageLoadComplete());
-
-                WebElement e = wait.until(ExpectedConditions.presenceOfElementLocated(By.className("ytp-play-button")));
-                System.out.println(e.getAttribute("aria-label"));
-                if (e.getAttribute("aria-label").contains("Play") || e.getAttribute("aria-label").contains("Ph")
-                        || e.getAttribute("aria-label").contains("Lire")) {
-                    e.click();
-                }
-
+//                WebElement e = wait.until(ExpectedConditions.presenceOfElementLocated(By.className("ytp-play-button")));
+//                System.out.println(e.getAttribute("aria-label"));
+//                if (e.getAttribute("aria-label").contains("Play") || e.getAttribute("aria-label").contains("Ph")
+//                        || e.getAttribute("aria-label").contains("Lire")) {
+//                    e.click();
+//                }
+                // find element time duration video! //TODO : handle
+                driver.findElement(By.className("ytp-time-duration"));
                 long time = getDurationVideo(duration);
 
                 Thread.sleep(time);
