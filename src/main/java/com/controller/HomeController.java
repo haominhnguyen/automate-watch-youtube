@@ -39,27 +39,28 @@ public class HomeController {
 
     @ResponseBody
     @RequestMapping(value = "/view_video", method = RequestMethod.POST)
-    public String viewVideo(HttpServletRequest request, @RequestParam("file") MultipartFile file) throws IOException {
+    public String viewVideo(HttpServletRequest request, @RequestParam(value = "file", required = false) MultipartFile file) throws IOException {
         String link = request.getParameter("link");
         String duration = request.getParameter("duration");
-        System.out.println(file.getOriginalFilename());
-        String fileName = file.getOriginalFilename();
+//        System.out.println(file.getOriginalFilename());
+//        String fileName = file.getOriginalFilename();
         List<String> data = null;
-        if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
-            data = readFileExcel(file);
-        } else if (fileName.endsWith(".txt")) {
-            // TODO:
-        }
+//        if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
+//            data = readFileExcel(file);
+//        } else if (fileName.endsWith(".txt")) {
+//            // TODO:
+//        }
+//
+//        try {
+//            for (int i = 0; i < data.size(); i++) {
+//                System.out.println("OK. GO!!!!!!!! Run in VPS : "+data.get(i));
+//                sendPOST("http://" + data.get(i) + ":8000//view_video_vps", link, duration);
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
-        try {
-            for (int i = 0; i < data.size(); i++) {
-                System.out.println("OK. GO!!!!!!!! Run in VPS : "+data.get(i));
-                sendPOST("http://" + data.get(i) + ":8000//view_video_vps", link, duration);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        sendPOST("http://localhost:8000//view_video_vps", link, duration);
         return "success";
     }
 

@@ -77,6 +77,41 @@
 			<artifactId>poi-ooxml</artifactId>
 			<version>3.9</version>
 		</dependency>
+
+		<!--<dependency>-->
+			<!--<groupId>org.apache.poi</groupId>-->
+			<!--<artifactId>poi</artifactId>-->
+			<!--<version>4.1.0</version>-->
+		<!--</dependency>-->
+
+		<dependency>
+			<groupId>com.google.api-client</groupId>
+			<artifactId>google-api-client</artifactId>
+			<version>1.30.10</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.google.apis/google-api-services-youtube -->
+		<dependency>
+			<groupId>com.google.apis</groupId>
+			<artifactId>google-api-services-youtube</artifactId>
+			<version>v3-rev222-1.25.0</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.google.oauth-client/google-oauth-client -->
+		<dependency>
+			<groupId>com.google.oauth-client</groupId>
+			<artifactId>google-oauth-client</artifactId>
+			<version>1.31.2</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.google.oauth-client/google-oauth-client-jetty -->
+		<dependency>
+			<groupId>com.google.oauth-client</groupId>
+			<artifactId>google-oauth-client-jetty</artifactId>
+			<version>1.31.2</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>

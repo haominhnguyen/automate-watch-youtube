@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+	integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+	crossorigin="anonymous">
+<title>Youtube</title>
+</head>
+<body>
+	<div class="row justify-content-center">
+	<!-- Number one -->
+		<div class="col-4">
+			<form id="get-all-video">
+				<div class="form-group">
+					<label for="channel_id">ID Kênh Youtube</label> <input type="text"
+						class="form-control" id="channel_id"
+						placeholder="Enter Youtube ID Channel">
+				</div>
+                <div class="form-group">
+                    <label for="api_key">API Key</label> <input type="text"
+                        class="form-control" id="api_key"
+                        placeholder="Enter API key">
+                </div>
+                <div class="form-group">
+                    <label for="max_result">Enter max result video</label> <input type="text"
+                        class="form-control" id="max_result"
+                        placeholder="Enter max result video">
+                </div>
+
+				<button type="submit" class="btn btn-primary">Download Video</button>
+			</form>
+		</div>
+	</div>
+
+	<script src="https://code.jquery.com/jquery-3.4.1.js"></script>
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+	<script
+		src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+	<script type="text/javascript">
+		$("#get-all-video").submit(function(event) {
+			event.preventDefault();
+			var idChannel = $("#channel_id").val();
+            var apiKey = $("#api_key").val();
+            var maxResult = $("#max_result").val();
+			console.log("URL kênh youtube:" +idChannel)
+
+            $.ajax({
+               type:"GET",
+               xhrFields: {
+                   responseType: 'blob'
+               },
+               data:{channelId: idChannel, apiKey: apiKey, maxResult: maxResult},
+               url:"download/test.xlsx",
+               success: function (data) {
+                   var a = document.createElement('a');
+                   var url = window.URL.createObjectURL(data);
+                   a.href = url;
+                   a.download = 'youtbe_video_export.xlsx';
+                   document.body.append(a);
+                   a.click();
+                   a.remove();
+                   window.URL.revokeObjectURL(url);
+                },
+                error : function(response) {
+                    console.log(response);
+                }
+            })
+		})
+
+	</script>
+</body>
+</html>
