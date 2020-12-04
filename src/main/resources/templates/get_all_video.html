@@ -19,11 +19,6 @@
 						placeholder="Enter Youtube ID Channel">
 				</div>
                 <div class="form-group">
-                    <label for="api_key">API Key</label> <input type="text"
-                        class="form-control" id="api_key"
-                        placeholder="Enter API key">
-                </div>
-                <div class="form-group">
                     <label for="max_result">Enter max result video</label> <input type="text"
                         class="form-control" id="max_result"
                         placeholder="Enter max result video">
@@ -44,7 +39,6 @@
 		$("#get-all-video").submit(function(event) {
 			event.preventDefault();
 			var idChannel = $("#channel_id").val();
-            var apiKey = $("#api_key").val();
             var maxResult = $("#max_result").val();
 			console.log("URL kênh youtube:" +idChannel)
 
