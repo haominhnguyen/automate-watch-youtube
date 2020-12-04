@@ -100,6 +100,7 @@ public class YoutubeResponseData {
         public String kind;
         public String etag;
         public String regionCode;
+        public String nextPageToken;
         public PageInfo pageInfo;
         public List<Item> items;
     }

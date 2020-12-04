@@ -39,22 +39,20 @@ public class ChannelYoutubeController {
     @GetMapping("/download/test.xlsx")
     public void downloadCsv(HttpServletResponse response, HttpServletRequest request) throws IOException {
         String channelId = request.getParameter("channelId");
-        String maxResult = request.getParameter("maxResult");
 
 
         response.setContentType("application/octet-stream");
         response.setHeader("Content-Disposition", "attachment; filename=Template_Export_Youtube_Video.xlsx");
-        ByteArrayInputStream stream = getAllVideoFromChannel(channelId, maxResult);
+        ByteArrayInputStream stream = getAllVideoFromChannel(channelId);
         IOUtils.copy(stream, response.getOutputStream());
     }
 
-    public ByteArrayInputStream getAllVideoFromChannel(String channelId,
-                                                       String maxResult) throws IOException {
+    public ByteArrayInputStream getAllVideoFromChannel(String channelId) throws IOException {
         HttpRequestFactory requestFactory
                 = new NetHttpTransport().createRequestFactory();
         HttpRequest request = requestFactory.buildGetRequest(
                 new GenericUrl(
-                        "https://www.googleapis.com/youtube/v3/search?channelId=" + channelId + "&part=snippet,id&order=date&maxResults=" + maxResult + "&key=AIzaSyD9tetV3JOLIAiXOdRUJDAt2cAMpQmJGn0"));
+                        "https://www.googleapis.com/youtube/v3/search?channelId=" + channelId + "&part=snippet,id&order=date&maxResults=5000&key=AIzaSyD9tetV3JOLIAiXOdRUJDAt2cAMpQmJGn0"));
         String rawResponse = request.execute().parseAsString();
 
         // Convert json to Object data
