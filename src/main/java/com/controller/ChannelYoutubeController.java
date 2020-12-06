@@ -13,6 +13,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -52,17 +53,51 @@ public class ChannelYoutubeController {
                 = new NetHttpTransport().createRequestFactory();
         HttpRequest request = requestFactory.buildGetRequest(
                 new GenericUrl(
-                        "https://www.googleapis.com/youtube/v3/search?channelId=" + channelId + "&part=snippet,id&order=date&maxResults=5000&key=AIzaSyD9tetV3JOLIAiXOdRUJDAt2cAMpQmJGn0"));
+                        "https://www.googleapis.com/youtube/v3/search?channelId=" + channelId + "&part=snippet,id&order=date&maxResults=50&key=AIzaSyA1cmZEcxj-_EiLeQnkO-7E5pRfSarO_Y8"));
         String rawResponse = request.execute().parseAsString();
+
+        // Write to file excel template
+        // Init data output.
+        List<ChannelModel> channelModelList = new ArrayList<>();
 
         // Convert json to Object data
         ObjectMapper om = new ObjectMapper();
         YoutubeResponseData.Root youtubeResponseData = om.readValue(rawResponse, YoutubeResponseData.Root.class);
+        // collect data for excel
+        collectDataForOutputExcel(youtubeResponseData, channelModelList);
 
-        // Write to file excel template
-        List<ChannelModel> channelModelList = new ArrayList<>();
+        String nextPageToken = youtubeResponseData.getNextPageToken();
+        while (!StringUtils.isEmpty(nextPageToken)) {
+            // for case > 50 video
+                HttpRequest requestMoreRecord = createNewRequestCallToYoutube(channelId, nextPageToken);
+                String rawResponseCaseMoreRecord = requestMoreRecord.execute().parseAsString();
+
+                YoutubeResponseData.Root responseCaseMoreRecord = om.readValue(rawResponseCaseMoreRecord, YoutubeResponseData.Root.class);
+                nextPageToken = responseCaseMoreRecord.getNextPageToken();
+                collectDataForOutputExcel(responseCaseMoreRecord, channelModelList);
+        }
+
+        return ChannelYoutubeController.urlChannelExportToExcel(channelModelList);
+    }
+
+    /**
+     * Create new URL.
+     *
+     * @param channelId
+     * @return
+     * @throws IOException
+     */
+    private HttpRequest createNewRequestCallToYoutube(String channelId, String nextPageToken) throws IOException {
+        HttpRequestFactory requestFactory
+                = new NetHttpTransport().createRequestFactory();
+        return requestFactory.buildGetRequest(
+                new GenericUrl(
+                        "https://www.googleapis.com/youtube/v3/search?channelId=" + channelId + "&part=snippet,id&order=date&maxResults=50&key=AIzaSyA1cmZEcxj-_EiLeQnkO-7E5pRfSarO_Y8&pageToken=" + nextPageToken + ""));
+    }
+
+    private void collectDataForOutputExcel(YoutubeResponseData.Root youtubeResponseData,
+                                           List<ChannelModel> channelModelList) {
         ChannelModel channelModel;
-
         // collect data for excel
         if (Objects.nonNull(youtubeResponseData) && !CollectionUtils.isEmpty(youtubeResponseData.getItems())) {
             for (YoutubeResponseData.Item item : youtubeResponseData.getItems()) {
@@ -81,10 +116,7 @@ public class ChannelYoutubeController {
                     channelModelList.add(channelModel);
                 }
             }
-        } else {
-            // Something error
         }
-        return ChannelYoutubeController.urlChannelExportToExcel(channelModelList);
     }
 
     /**
@@ -159,6 +191,5 @@ public class ChannelYoutubeController {
     private String bindingUrlYoutubeVideo(String id) {
         return String.format("https://www.youtube.com/watch?v=%s", id);
     }
-
 
 }
