@@ -105,6 +105,12 @@
 			<version>1.31.2</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/org.jodd/jodd -->
+		<dependency>
+			<groupId>org.jodd</groupId>
+			<artifactId>jodd</artifactId>
+			<version>3.3.4</version>
+		</dependency>
 
 	</dependencies>
 

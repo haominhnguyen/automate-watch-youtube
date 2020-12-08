@@ -15,4 +15,5 @@ public class ChannelModel {
     private String idChannel;
     private String nameVideo;
     private String linkVideo;
+    private String thumbnailVideo;
 }

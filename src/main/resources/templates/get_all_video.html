@@ -21,6 +21,11 @@
 
 				<button type="submit" class="btn btn-primary">Download Video</button>
 			</form>
+            <div>
+                <form id="down-thumb">
+                    <button type="submit" class="btn btn-primary">Download Thumbnails</button>
+                </form>
+            </div>
 		</div>
 	</div>
 
@@ -42,7 +47,7 @@
                    responseType: 'blob'
                },
                data:{channelId: idChannel},
-               url:"download/test.xlsx",
+               url:"download_all_video",
                success: function (data) {
                    var a = document.createElement('a');
                    var url = window.URL.createObjectURL(data);
@@ -57,7 +62,25 @@
                     console.log(response);
                 }
             })
-		})
+		});
+
+		$("#down-thumb").submit(function(event) {
+            event.preventDefault();
+            var idChannel = $("#channel_id").val();
+            console.log("Hao Dep Trai!!!" +idChannel)
+
+            $.ajax({
+               type:"GET",
+               data:{channelId: idChannel},
+               url:"download_all_thumb",
+               success: function (data) {
+                  alert("Success!!!");
+                },
+                error : function(response) {
+                    console.log(response);
+                }
+            })
+        })
 
 	</script>
 </body>

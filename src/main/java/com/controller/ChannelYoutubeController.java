@@ -9,18 +9,26 @@ import com.google.api.client.util.IOUtils;
 import com.model.ChannelModel;
 import com.model.YoutubeResponseData;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -37,8 +45,8 @@ public class ChannelYoutubeController {
         return "get_all_video";
     }
 
-    @GetMapping("/download/test.xlsx")
-    public void downloadCsv(HttpServletResponse response, HttpServletRequest request) throws IOException {
+    @GetMapping("/download_all_video")
+    public void downloadExcel(HttpServletResponse response, HttpServletRequest request) throws IOException {
         String channelId = request.getParameter("channelId");
 
 
@@ -48,36 +56,57 @@ public class ChannelYoutubeController {
         IOUtils.copy(stream, response.getOutputStream());
     }
 
-    public ByteArrayInputStream getAllVideoFromChannel(String channelId) throws IOException {
+    @GetMapping("/download_all_thumb")
+    public void downloadThumbnails(HttpServletResponse response, HttpServletRequest request) throws IOException {
+        String channelId = request.getParameter("channelId");
+
+        // get all data from google
+        String rawResponse = connectToYoutubeDataAPI(channelId);
+        // export data to model.
+        List<ChannelModel> channelModels = outputAfterCollectData(rawResponse, channelId);
+        for (ChannelModel channelModel : channelModels) {
+            // save image thumbnails of video to local
+            System.out.println("-----------------------------------------------------");
+            System.out.println("Thumb video link: " + channelModel.getThumbnailVideo());
+            System.out.println("URL video link: " + channelModel.getLinkVideo());
+            System.out.println("-----------------------------------------------------");
+            writeImageToLocal(channelModel.getThumbnailVideo(), channelModel.getNameVideo());
+        }
+    }
+
+    /**
+     * Get all video from channel
+     * @param channelId
+     * @return
+     * @throws IOException
+     */
+    private ByteArrayInputStream getAllVideoFromChannel(String channelId) throws IOException {
+
+        // get all data from google
+        String rawResponse = connectToYoutubeDataAPI(channelId);
+        // export data to model.
+        List<ChannelModel> channelModelList = outputAfterCollectData(rawResponse, channelId);
+
+        // write to excel file
+        ByteArrayInputStream out = ChannelYoutubeController.urlChannelExportToExcel(channelModelList);
+
+        System.out.println("\nDONE PROCESS. Check file excel output!!!");
+        return out;
+    }
+
+    /**
+     * Connect to youtbe data GET API
+     * @param channelId
+     * @return
+     * @throws IOException
+     */
+    private String connectToYoutubeDataAPI(String channelId) throws IOException {
         HttpRequestFactory requestFactory
                 = new NetHttpTransport().createRequestFactory();
         HttpRequest request = requestFactory.buildGetRequest(
                 new GenericUrl(
-                        "https://www.googleapis.com/youtube/v3/search?channelId=" + channelId + "&part=snippet,id&order=date&maxResults=50&key=AIzaSyA1cmZEcxj-_EiLeQnkO-7E5pRfSarO_Y8"));
-        String rawResponse = request.execute().parseAsString();
-
-        // Write to file excel template
-        // Init data output.
-        List<ChannelModel> channelModelList = new ArrayList<>();
-
-        // Convert json to Object data
-        ObjectMapper om = new ObjectMapper();
-        YoutubeResponseData.Root youtubeResponseData = om.readValue(rawResponse, YoutubeResponseData.Root.class);
-        // collect data for excel
-        collectDataForOutputExcel(youtubeResponseData, channelModelList);
-
-        String nextPageToken = youtubeResponseData.getNextPageToken();
-        while (!StringUtils.isEmpty(nextPageToken)) {
-            // for case > 50 video
-                HttpRequest requestMoreRecord = createNewRequestCallToYoutube(channelId, nextPageToken);
-                String rawResponseCaseMoreRecord = requestMoreRecord.execute().parseAsString();
-
-                YoutubeResponseData.Root responseCaseMoreRecord = om.readValue(rawResponseCaseMoreRecord, YoutubeResponseData.Root.class);
-                nextPageToken = responseCaseMoreRecord.getNextPageToken();
-                collectDataForOutputExcel(responseCaseMoreRecord, channelModelList);
-        }
-
-        return ChannelYoutubeController.urlChannelExportToExcel(channelModelList);
+                        "https://www.googleapis.com/youtube/v3/search?channelId=" + channelId + "&part=snippet,id&order=date&maxResults=50&key=AIzaSyCvnbQXlcZr2ZgYI_Z8QBDCSHpEpXqWPSM"));
+        return request.execute().parseAsString();
     }
 
     /**
@@ -92,11 +121,50 @@ public class ChannelYoutubeController {
                 = new NetHttpTransport().createRequestFactory();
         return requestFactory.buildGetRequest(
                 new GenericUrl(
-                        "https://www.googleapis.com/youtube/v3/search?channelId=" + channelId + "&part=snippet,id&order=date&maxResults=50&key=AIzaSyA1cmZEcxj-_EiLeQnkO-7E5pRfSarO_Y8&pageToken=" + nextPageToken + ""));
+                        "https://www.googleapis.com/youtube/v3/search?channelId=" + channelId + "&part=snippet,id&order=date&maxResults=50&key=AIzaSyCvnbQXlcZr2ZgYI_Z8QBDCSHpEpXqWPSM&pageToken=" + nextPageToken + ""));
     }
 
-    private void collectDataForOutputExcel(YoutubeResponseData.Root youtubeResponseData,
-                                           List<ChannelModel> channelModelList) {
+    /**
+     * Output after collect data
+     * @param rawResponse
+     * @param channelId
+     * @return
+     * @throws IOException
+     */
+    private List<ChannelModel> outputAfterCollectData(String rawResponse, String channelId) throws IOException {
+
+        List<ChannelModel> channelModelList = new ArrayList<>();
+        // Convert json to Object data
+        ObjectMapper om = new ObjectMapper();
+        YoutubeResponseData.Root youtubeResponseData = om.readValue(rawResponse, YoutubeResponseData.Root.class);
+        // collect data for excel
+        collectDataForOutputYoutubeAPI(youtubeResponseData, channelModelList);
+
+        // for case > 50 video
+        // check pageToken
+        String nextPageToken = youtubeResponseData.getNextPageToken();
+        while (!StringUtils.isEmpty(nextPageToken)) {
+            HttpRequest requestMoreRecord = createNewRequestCallToYoutube(channelId, nextPageToken);
+            String rawResponseCaseMoreRecord = requestMoreRecord.execute().parseAsString();
+
+            YoutubeResponseData.Root responseCaseMoreRecord = om.readValue(rawResponseCaseMoreRecord, YoutubeResponseData.Root.class);
+            nextPageToken = responseCaseMoreRecord.getNextPageToken();
+            collectDataForOutputYoutubeAPI(responseCaseMoreRecord, channelModelList);
+        }
+
+        // output data
+        return channelModelList;
+    }
+
+    /**
+     * Collect data to output client
+     *
+     * @param youtubeResponseData
+     * @param channelModelList
+     * @throws IOException
+     */
+    private void collectDataForOutputYoutubeAPI(YoutubeResponseData.Root youtubeResponseData,
+                                                List<ChannelModel> channelModelList) throws IOException {
         ChannelModel channelModel;
         // collect data for excel
         if (Objects.nonNull(youtubeResponseData) && !CollectionUtils.isEmpty(youtubeResponseData.getItems())) {
@@ -111,6 +179,19 @@ public class ChannelYoutubeController {
                     channelModel.setLinkVideo(bindingUrlYoutubeVideo(item.getId().getVideoId()));
                     channelModel.setNameVideo(item.getSnippet().getTitle());
                     channelModel.setNameChannel(item.getSnippet().getChannelTitle());
+                    if (Objects.nonNull(item.getSnippet().getThumbnails())) {
+                        if (Objects.nonNull(item.getSnippet().getThumbnails().getHigh())) {
+                            channelModel.setThumbnailVideo(item.getSnippet().getThumbnails().getHigh().getUrl().replace("hqdefault", "maxresdefault"));
+                        }
+                        if (Objects.isNull(channelModel.getThumbnailVideo())
+                                && Objects.nonNull(item.getSnippet().getThumbnails().getMedium())) {
+                            channelModel.setThumbnailVideo(item.getSnippet().getThumbnails().getMedium().getUrl().replace("mqdefault", "maxresdefault"));
+                        }
+                        if (Objects.isNull(channelModel.getThumbnailVideo())
+                                && Objects.nonNull(item.getSnippet().getThumbnails().getDefaultVal())) {
+                            channelModel.setThumbnailVideo(item.getSnippet().getThumbnails().getDefaultVal().getUrl().replace("default", "maxresdefault"));
+                        }
+                    }
 
                     // add to list data
                     channelModelList.add(channelModel);
@@ -192,4 +273,85 @@ public class ChannelYoutubeController {
         return String.format("https://www.youtube.com/watch?v=%s", id);
     }
 
+    /**
+     * Write image to local
+     *
+     * @param ulrImage
+     * @throws IOException
+     */
+    private void writeImageToLocal(String ulrImage, String nameVideo) {
+        try {
+            URL url = new URL(ulrImage);
+
+            // read image
+            BufferedImage image = ImageIO.read(url);
+
+            // resize image
+            Image scaledImage = image.getScaledInstance(1280, 720, Image.SCALE_AREA_AVERAGING);
+
+            // create path folder
+            Path path = Paths.get(System.getProperty("user.dir") + "/thumbnails");
+
+            System.out.println(path);
+
+            if (!Files.exists(path)) {
+                //java.nio.file.Files;
+                Files.createDirectories(path);
+
+                System.out.println("Directory folder is created!");
+
+            }
+            // save the resize image aka thumbnail
+            ImageIO.write(
+                    convertToBufferedImage(scaledImage),
+                    "JPEG",
+                    new File("\\" + path + "\\" + replaceSpecialCharacter(nameVideo) + ".jpg"));
+
+        } catch (IOException e) {
+            System.out.println("vao day2");
+        }
+        System.out.println("Done: " + nameVideo);
+    }
+
+    /**
+     * Convert Image to BufferedImage
+     * @param img
+     * @return
+     */
+    private static BufferedImage convertToBufferedImage(Image img) {
+
+        if (img instanceof BufferedImage) {
+            return (BufferedImage) img;
+        }
+
+        // Create a buffered image with transparency
+        BufferedImage bufferedImage = new BufferedImage(
+                img.getWidth(null), img.getHeight(null),
+                BufferedImage.TYPE_INT_RGB);
+
+        Graphics2D graphics2D = bufferedImage.createGraphics();
+        graphics2D.drawImage(img, 0, 0, null);
+        graphics2D.dispose();
+
+        return bufferedImage;
+    }
+
+    /**
+     * Replace special character in window!
+     *
+     * @param name
+     * @return
+     */
+    private static String replaceSpecialCharacter(String name) {
+        name = name.replace('|', '_')
+                .replace("?", "")
+                .replace(':', '-')
+                .replace('/', '_')
+                .replace('\\', '_')
+                .replace('*', '_')
+                .replace('<', '_')
+                .replace('>', '_')
+                .replace('"', '\'');
+        return name;
+    }
 }
