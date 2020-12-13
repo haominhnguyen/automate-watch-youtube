@@ -31,10 +31,10 @@ import com.selenium.PlayVideo;
 @Controller
 public class HomeController {
 
-    @RequestMapping(value = "/", method = RequestMethod.GET)
+    @RequestMapping(value = "/auto_view_video", method = RequestMethod.GET)
     public String index(Model model) {
         model.addAttribute("message", "hello");
-        return "index";
+        return "auto_view_video";
     }
 
     @ResponseBody

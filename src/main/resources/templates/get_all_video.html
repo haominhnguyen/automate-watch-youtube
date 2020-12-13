@@ -74,10 +74,12 @@
                data:{channelId: idChannel},
                url:"download_all_thumb",
                success: function (data) {
-                  alert("Success!!!");
+                  console.log(data);
+                  alert("Success!!!" +data.getAllResponseHeaders());
                 },
                 error : function(response) {
-                    console.log(response);
+                  console.log(response);
+                  alert("Failed TO GET DATA!!!");
                 }
             })
         })

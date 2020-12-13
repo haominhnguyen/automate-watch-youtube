@@ -25,10 +25,14 @@ import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -39,8 +43,14 @@ import java.util.Objects;
 @Controller
 public class ChannelYoutubeController {
 
-    @RequestMapping(value = "/export_video", method = RequestMethod.GET)
+    @RequestMapping(value = "/", method = RequestMethod.GET)
     public String index(Model model) {
+        model.addAttribute("index", "index");
+        return "index";
+    }
+
+    @RequestMapping(value = "/export_video", method = RequestMethod.GET)
+    public String autoViewVideo(Model model) {
         model.addAttribute("get_all_video", "get_all_video");
         return "get_all_video";
     }
@@ -70,8 +80,11 @@ public class ChannelYoutubeController {
             System.out.println("Thumb video link: " + channelModel.getThumbnailVideo());
             System.out.println("URL video link: " + channelModel.getLinkVideo());
             System.out.println("-----------------------------------------------------");
-            writeImageToLocal(channelModel.getThumbnailVideo(), channelModel.getNameVideo());
+            writeImageToLocal(channelModel.getThumbnailVideo(), channelModel.getNameVideo(), channelId);
         }
+        System.out.println("\n-----------------------------------------------------");
+        System.out.println("Total thumbnails downloaded: " +channelModels.size());
+        System.out.println("-----------------------------------------------------");
     }
 
     /**
@@ -279,7 +292,7 @@ public class ChannelYoutubeController {
      * @param ulrImage
      * @throws IOException
      */
-    private void writeImageToLocal(String ulrImage, String nameVideo) {
+    private void writeImageToLocal(String ulrImage, String nameVideo, String channelId) throws IOException {
         try {
             URL url = new URL(ulrImage);
 
@@ -290,7 +303,7 @@ public class ChannelYoutubeController {
             Image scaledImage = image.getScaledInstance(1280, 720, Image.SCALE_AREA_AVERAGING);
 
             // create path folder
-            Path path = Paths.get(System.getProperty("user.dir") + "/thumbnails");
+            Path path = Paths.get(System.getProperty("user.dir") + "/thumbnails/"+ channelId);
 
             System.out.println(path);
 
@@ -308,11 +321,34 @@ public class ChannelYoutubeController {
                     new File("\\" + path + "\\" + replaceSpecialCharacter(nameVideo) + ".jpg"));
 
         } catch (IOException e) {
-            System.out.println("vao day2");
+            URL url = new URL(ulrImage.replace("maxresdefault.jpg","hqdefault.jpg"));
+
+            // read image
+            BufferedImage image = ImageIO.read(url);
+
+            // resize image
+            Image scaledImage = image.getScaledInstance(1280, 720, Image.SCALE_AREA_AVERAGING);
+
+            // create path folder
+            Path path = Paths.get(System.getProperty("user.dir") + "/thumbnails");
+            // save the resize image aka thumbnail
+            ImageIO.write(
+                    convertToBufferedImage(scaledImage),
+                    "JPEG",
+                    new File("\\" + path + "\\" + replaceSpecialCharacter(nameVideo) + ".jpg"));
+            System.out.println("Done video hq size:" +url);
         }
         System.out.println("Done: " + nameVideo);
     }
 
+    public static void main(String[] args) {
+        LocalDateTime myDateObj = LocalDateTime.now();
+        System.out.println("Before formatting: " + myDateObj);
+        DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
+
+        String formattedDate = myDateObj.format(myFormatObj);
+        System.out.println("After formatting: " + formattedDate);
+    }
     /**
      * Convert Image to BufferedImage
      * @param img
